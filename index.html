@@ -1,170 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jake Stranzl | Editor</title>
-    <style>
-        :root { --bg: #0a0a0a; --text: #f0f0f0; --accent: #c8c5bf; --border: #222; }
-        
-        * { box-sizing: border-box; }
-        body { background: var(--bg); color: var(--text); margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jake Stranzl | Director & Editor</title>
 
-        /* SPEED LOADER */
-        #loader { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; font-size: 1.5rem; letter-spacing: 0.3em; transition: opacity 0.6s ease; }
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111110%22/><text y=%2250%%22 x=%2250%%22 dominant-baseline=%22central%22 text-anchor=%22middle%22 font-size=%2255%22 fill=%22%23e4e3e0%22 font-family=%22Georgia,serif%22 font-style=%22italic%22>JS</text></svg>">
 
-        /* LAYOUT */
-        .wrap { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
-        
-        /* SIDEBAR (About Section Cleaned) */
-        aside { position: sticky; top: 0; height: 100vh; padding: 60px 40px; border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; }
-        .logo { font-size: 1.4rem; font-weight: 700; text-decoration: none; color: var(--text); line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 40px; display: block; }
-        
-        .about-text { font-size: 0.85rem; line-height: 1.6; color: #888; margin-bottom: 40px; }
-        
-        nav a { display: block; text-decoration: none; color: #555; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 12px; transition: color 0.2s ease; }
-        nav a:hover, nav a.active { color: var(--text); }
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/* 1. CINEMATIC THEME */
+:root { 
+  --bg: #0d0d0c; 
+  --text: #e4e3e0; 
+  --border: #222220; 
+  --accent: #7a7975; 
+  --glow: rgba(255,255,255,0.05);
+}
 
-        /* THE GRID */
-        main { padding: 4px; background: #000; }
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
-        
-        .item { position: relative; aspect-ratio: 16/9; background: #111; overflow: hidden; cursor: pointer; transform: translateZ(0); }
-        
-        /* VIDEO OPTIMIZATION */
-        video { width: 100.5%; height: 100.5%; object-fit: cover; filter: grayscale(100%); transition: filter 0.5s ease; pointer-events: none; }
-        .item:hover video { filter: grayscale(0%); }
+*{box-sizing:border-box; margin:0; padding:0}
+body{ background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 
-        /* SNAPPY TITLES */
-        .title { 
-            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.15s ease-out; 
-            will-change: opacity; z-index: 2;
-        }
-        .item:hover .title { opacity: 1; }
-        .title span { border-bottom: 1px solid var(--text); padding-bottom: 4px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.2em; font-weight: 500; }
+/* Subtle Film Grain Overlay */
+.grain {
+  position: fixed; inset: -50%; width: 200%; height: 200%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.04; pointer-events: none; z-index: 999;
+}
 
-        /* LIGHTBOX */
-        #lb { position: fixed; inset: 0; background: rgba(0,0,0,0.98); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 40px; }
-        #lb-video { width: 100%; max-width: 1200px; max-height: 80vh; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .close-lb { position: absolute; top: 40px; right: 40px; color: #fff; cursor: pointer; font-size: 0.8rem; letter-spacing: 0.2em; text-transform: uppercase; }
+/* 2. LOADING SCREEN */
+#loader {
+  position: fixed; inset: 0; background: var(--bg); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+}
+#loader.hide { opacity: 0; visibility: hidden; transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.loader-logo { 
+  font-family: 'Cormorant Garamond', serif; font-size: 3rem; font-style: italic; color: var(--text);
+  animation: pulse 2.5s infinite ease-in-out; 
+}
+@keyframes pulse { 0%, 100% { opacity: 0.2; transform: scale(0.98); } 50% { opacity: 1; transform: scale(1); } }
 
-        @media (max-width: 900px) {
-            .wrap { grid-template-columns: 1fr; }
-            aside { height: auto; position: relative; padding: 40px; border-right: none; border-bottom: 1px solid var(--border); }
-            .grid { grid-template-columns: 1fr; }
-        }
-    </style>
+.wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; position: relative; z-index: 2; }
+
+/* Sidebar */
+aside { position: sticky; top: 0; height: 100vh; padding: 60px 48px; border-right: 1px solid var(--border); background: var(--bg); display: flex; flex-direction: column; }
+.logo { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; text-decoration: none; color: var(--text); line-height: 1.1; margin-bottom: 60px; }
+.logo span { display: block; font-style: italic; font-size: .95rem; color: var(--accent); margin-top: 5px; }
+
+nav { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.nb { background: none; border: none; color: #444; text-align: left; text-transform: uppercase; font-size: .62rem; letter-spacing: .15em; cursor: pointer; padding: 8px 0; transition: 0.4s; position: relative; width: fit-content; }
+.nb.on, .nb:hover { color: var(--text); }
+.nb.on::after { content: ''; position: absolute; left: 0; bottom: 4px; width: 100%; height: 1px; background: var(--text); }
+
+/* 3. GRID SYSTEM */
+main { padding: 60px 60px 100px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+#sg-vert1, #sg-vert2 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+#sg-land { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; margin: 4px 0; }
+
+.fi { position: relative; background: #000; aspect-ratio: 16/9; overflow: hidden; opacity: 0; transform: translateY(10px); transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer; }
+.fi.vert { aspect-ratio: 9/16; }
+.fi.show { opacity: 1; transform: translateY(0); }
+
+.ft { width: 100%; height: 101%; object-fit: cover; transition: 1.2s cubic-bezier(0.16, 1, 0.3, 1); filter: contrast(1.05) brightness(0.9); }
+.fi:hover .ft { transform: scale(1.04); filter: contrast(1.1) brightness(1.1); }
+
+.fo { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px; opacity: 0; transition: 0.5s ease; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%); }
+.fi:hover .fo { opacity: 1; }
+
+.fp-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.fp { width: 42px; height: 42px; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.4s; background: rgba(0,0,0,0.2); backdrop-filter: blur(4px); }
+.fi:hover .fp { opacity: 1; transform: scale(1.1); }
+.fp::after { content: ''; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 8px solid #fff; margin-left: 3px; }
+
+.fti { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; color: #fff; margin-bottom: 2px; font-style: italic; }
+.fm { font-size: .52rem; color: rgba(255,255,255,0.6); letter-spacing: .12em; text-transform: uppercase; }
+
+/* 4. ABOUT SECTION - Noir Layout */
+.aw { position: relative; z-index: 2; max-width: 1200px; padding-top: 20px; }
+.about-flex { display: grid; grid-template-columns: 1fr; gap: 40px; }
+.about-flex img { width: 100%; height: auto; border-radius: 2px; filter: grayscale(100%) contrast(1.1); transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+.about-flex img:hover { filter: grayscale(0%) contrast(1); }
+
+@media (min-width: 1024px) {
+  .about-flex { grid-template-columns: 1.5fr 1fr 0.7fr; gap: 60px; align-items: center; }
+}
+
+/* 5. LIGHTBOX */
+.lb { display: none; position: fixed; inset: 0; background: rgba(5,5,5, 0.98); z-index: 1100; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+.lb.on { display: flex; }
+.lbw { width: 90%; max-width: 1250px; aspect-ratio: 16/9; background: #000; position: relative; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+.lbw.v { max-width: 440px; aspect-ratio: 9/16; }
+.lbw iframe, .lbw video { width: 100%; height: 100%; border: none; }
+.lbc { position: fixed; top: 40px; right: 48px; background: none; border: none; color: #fff; font-family: 'DM Mono'; text-transform: uppercase; font-size: .7rem; cursor: pointer; letter-spacing: 0.2em; opacity: 0.4; transition: 0.3s; }
+.lbc:hover { opacity: 1; }
+
+.sec { display: none; opacity: 0; }
+.sec.on { display: block; opacity: 1; transition: opacity 0.8s ease; }
+</style>
 </head>
 <body>
 
-<div id="loader">JS</div>
+<div class="grain"></div>
+<div id="loader"><div class="loader-logo">JS</div></div>
 
 <div class="wrap">
-    <aside>
-        <div>
-            <a href="/" class="logo">JAKE<br>STRANZL</a>
-            <div class="about-text">
-                Independent film editor specializing in sports, commercial, and high-energy narrative content. Focused on precision rhythm and visual storytelling.
+  <aside>
+    <a class="logo" href="#">Jake Stranzl<span>Director / Editor</span></a>
+    <nav>
+      <button class="nb on" id="b-films" onclick="show('films',this)">Films</button>
+      <button class="nb" id="b-social" onclick="show('social',this)">Social</button>
+      <button class="nb" id="b-about" onclick="show('about',this)">About</button>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="sec on" id="s-films"><div class="grid" id="fg"></div></div>
+    <div class="sec" id="s-social">
+      <div id="sg-vert1"></div>
+      <div id="sg-land"></div>
+      <div id="sg-vert2"></div>
+    </div>
+    <div class="sec" id="s-about">
+      <div class="aw">
+        <div class="about-flex">
+          <div class="about-text">
+            <h2 style="font-family:'Cormorant Garamond',serif; font-size:3.2rem; font-style:italic; margin-bottom:40px; letter-spacing:-0.02em;">About</h2>
+            <p style="color:var(--accent); line-height:1.9; font-size:.92rem; margin-bottom:50px; max-width:450px;">I shoot, direct, and edit across short documentaries, branded campaigns, and social content. Currently editing at GoPro. Previously at the Boston Red Sox.</p>
+            
+            <div style="display:flex; flex-direction:column; gap:1px; border-top:1px solid var(--border)">
+              <a href="mailto:jakestranzl1@gmail.com" style="text-decoration:none; color:var(--text); border-bottom:1px solid var(--border); padding:18px 0; display:flex; justify-content:space-between; font-size:.65rem; text-transform:uppercase; letter-spacing:0.1em;">jakestranzl1@gmail.com <span>&rarr;</span></a>
+              <a href="https://www.linkedin.com/in/jake-stranzl-61a1b21b9/" target="_blank" style="text-decoration:none; color:var(--text); border-bottom:1px solid var(--border); padding:18px 0; display:flex; justify-content:space-between; font-size:.65rem; text-transform:uppercase; letter-spacing:0.1em;">LinkedIn <span>&nearrow;</span></a>
+              <a href="https://letterboxd.com/jakestranzl/" target="_blank" style="text-decoration:none; color:var(--text); border-bottom:1px solid var(--border); padding:18px 0; display:flex; justify-content:space-between; font-size:.65rem; text-transform:uppercase; letter-spacing:0.1em;">Letterboxd <span>&nearrow;</span></a>
+              <a href="JakeStranzlResume2026.pdf" target="_blank" style="text-decoration:none; color:var(--text); border-bottom:1px solid var(--border); padding:18px 0; display:flex; justify-content:space-between; font-size:.65rem; text-transform:uppercase; letter-spacing:0.1em;">Resume <span>&darr;</span></a>
             </div>
-            <nav>
-                <a href="#" class="active">Work</a>
-                <a href="resume.pdf" target="_blank">Resume</a>
-                <a href="mailto:jake@jakestranzl.com">Contact</a>
-            </nav>
+          </div>
+          <img src="farmsbts.PNG" alt="Farms BTS">
+          <img src="doginterview.jpg" alt="Dog Interview">
         </div>
-        <div style="font-size: 0.65rem; color: #333; letter-spacing: 0.1em;">© 2026 JAKE STRANZL</div>
-    </aside>
-
-    <main>
-        <div class="grid">
-            <div class="item" onclick="openLB('adidas.mp4')">
-                <video src="adidas.mp4" muted loop playsinline preload="metadata"></video>
-                <div class="title"><span>Adidas V3</span></div>
-            </div>
-
-            <div class="item" onclick="openLB('maria.mp4')">
-                <video src="maria.mp4" muted loop playsinline preload="metadata"></video>
-                <div class="title"><span>Base Maria</span></div>
-            </div>
-
-            <div class="item" onclick="openLB('kasilofvibe.mp4')">
-                <video src="kasilofvibe.mp4" muted loop playsinline preload="metadata"></video>
-                <div class="title"><span>Kasilof Vibe</span></div>
-            </div>
-
-            <div class="item" onclick="openLB('fenway_fan.mp4')">
-                <video src="fenway_fan.mp4" muted loop playsinline preload="metadata"></video>
-                <div class="title"><span>Fenway Fan</span></div>
-            </div>
-
-            <div class="item" onclick="openLB('bello_hype.mp4')">
-                <video src="bello_hype.mp4" muted loop playsinline preload="metadata"></video>
-                <div class="title"><span>Bello Hype</span></div>
-            </div>
-
-            <div class="item" onclick="openLB('thompson_edit.mp4')">
-                <video src="thompson_edit.mp4" muted loop playsinline preload="metadata"></video>
-                <div class="title"><span>Thompson Edit</span></div>
-            </div>
-
-            <div class="item" onclick="openLB('magical_thing.mp4')">
-                <video src="magical_thing.mp4" muted loop playsinline preload="metadata"></video>
-                <div class="title"><span>Magical Thing</span></div>
-            </div>
-
-            <div class="item" onclick="openLB('crochet.mp4')">
-                <video src="crochet.mp4" muted loop playsinline preload="metadata"></video>
-                <div class="title"><span>Garrett Crochet</span></div>
-            </div>
-
-            <div class="item" onclick="openLB('zacca.mov')">
-                <video src="zacca.mov" muted loop playsinline preload="metadata"></video>
-                <div class="title"><span>Zacca Reel</span></div>
-            </div>
-        </div>
-    </main>
+      </div>
+    </div>
+  </main>
 </div>
 
-<div id="lb" onclick="closeLB()">
-    <div class="close-lb">Close</div>
-    <video id="lb-video" controls autoplay></video>
+<div class="lb" id="lb" onclick="if(event.target===this)closeLb()">
+  <button class="lbc" onclick="closeLb()">Close &times;</button>
+  <div class="lbw" id="lbw"></div>
 </div>
 
 <script>
-    // Loader disappearance
-    window.addEventListener('load', () => {
-        const loader = document.getElementById('loader');
-        loader.style.opacity = '0';
-        setTimeout(() => loader.style.display = 'none', 600);
-    });
+/* 1. DATA */
+var films=[
+  {id:'jNdvmXwzN6Y',title:'Boston Red Sox',meta:'Fenway Farms — Director / DP / Editor'},
+  {id:'WV6Js-KmWWI',title:'Kenai Riverside Resort',meta:'A Day on the Salt — Director / DP / Editor'},
+  {id:'3mc48GH8BNg',title:'GoPro',meta:'Fitz Roy Jump — Editor'}, 
+  {id:'AB4I2oyG730',title:'Kenai Riverside Resort',meta:'Float Plane Bear Viewing — Director / DP / Editor',t:46},
+  {id:'EpUMqI8uNew',title:'Rare Gem Productions',meta:'A tale of dinks — Director / DP / Editor'},
+  {id:'FLNtC_ZQq2c',title:'Kenai Riverside Resort',meta:'Kasilof River — Director / DP / Editor'},
+  {id:'1177168970',title:'Base Power',meta:"Maria's Story — Director / DP / Editor",vimeo:true},
+  {id:'878184793',title:'Personal Project',meta:'A Few Moments in Florence — Director / DP / Editor',vimeo:true},
+  {id:'1177554328',title:'University of Utah Athletics',meta:'Sports Reel — Director / DP / Editor',vimeo:true}
+];
 
-    // Hover Play Logic
-    document.querySelectorAll('.item').forEach(item => {
-        const v = item.querySelector('video');
-        item.addEventListener('mouseenter', () => v.play());
-        item.addEventListener('mouseleave', () => { 
-            v.pause(); 
-            v.currentTime = 0; 
-        });
-    });
+var reelsTop=[
+  {src:'kenai_placestobereel.mp4',title:'Kenai Riverside Resort',meta:'Places to Be — Director/Editor',v:true,t:8},
+  {src:'kasilofvibe.mp4',title:'Kenai Riverside Resort',meta:'Alaska Meditation — Director/Editor',v:true,t:4.5},
+  {src:'dogdays.mp4',title:'Boston Red Sox',meta:'Dog Days — Director/Editor',v:true,t:2.5},
+  {src:'Zacca.mov',title:'Zacca Hummus',meta:'Brand Reel — Director/Editor',v:true,t:22},
+  {src:'magical_thing.mp4',title:'Boston Red Sox',meta:'Magical Thing — Director/Editor',v:true,t:30}
+];
 
-    // Lightbox Logic
-    function openLB(src) {
-        const lb = document.getElementById('lb');
-        const lbv = document.getElementById('lb-video');
-        lbv.src = src;
-        lb.style.display = 'flex';
+var reelsLand=[
+  {src:'fenway_fan.mp4',title:'Boston Red Sox',meta:'NESN TV Spot — Director/Editor',v:false,t:13},
+  {src:'XCRecap.mp4',title:'Utah Athletics',meta:'XC Recap — Director/Editor',v:false,t:1.5}
+];
+
+var reelsBot=[
+  {src:'bello_hype.mp4',title:'Boston Red Sox',meta:'Bello Hype — Director/Editor',v:true,t:8.5},
+  {title:'Base Power',meta:'Maria Ad — Director/Editor',src:'maria.mp4',v:true,t:21},
+  {src:'thompson_edit.mp4',title:'Boston Globe',meta:'Honor Roll Educators — Director/Editor',v:true,t:0},
+  {src:'crochet.mp4',title:'Boston Red Sox',meta:'Crochet Hype — Director/Editor',v:true,t:1},
+  {src:'adidas.mp4',title:'Adidas',meta:'Truck Activation — Director/Editor',v:true,t:16.2}
+];
+
+/* 2. LOGIC */
+function makeVid(r){
+  var vid=document.createElement('video');
+  vid.className='ft'; vid.src=r.src + (r.t ? '#t=' + r.t : '');
+  vid.muted=true; vid.setAttribute('preload','auto'); vid.setAttribute('playsinline','');
+  vid.addEventListener('loadeddata', function() { if (r.t !== undefined) vid.currentTime = r.t; });
+  vid.onmouseenter = () => vid.play();
+  vid.onmouseleave = () => { vid.pause(); vid.currentTime = (r.t || 0); };
+  return vid;
+}
+
+function show(name,btn){
+  document.querySelectorAll('.sec').forEach(s => { s.style.display = 'none'; s.style.opacity = '0'; });
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+  const target = document.getElementById('s-'+name);
+  target.style.display = 'block';
+  setTimeout(() => { target.style.opacity = '1'; }, 50);
+  btn.classList.add('on');
+}
+
+function openVideo(f){
+  let html = '';
+  if(f.vimeo) { html = `<iframe src="https://player.vimeo.com/video/${f.id}?autoplay=1&color=ffffff&title=0&byline=0&portrait=0" allow="autoplay; fullscreen" allowfullscreen></iframe>`; } 
+  else {
+    const start = f.t ? '&start=' + f.t : '';
+    html = `<iframe src="https://www.youtube.com/embed/${f.id}?autoplay=1&rel=0&modestbranding=1&textcolor=white${start}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+  }
+  document.getElementById('lbw').className='lbw';
+  document.getElementById('lbw').innerHTML=html;
+  document.getElementById('lb').classList.add('on');
+}
+
+function openMP4(r){
+  document.getElementById('lbw').className='lbw' + (r.v ? ' v' : '');
+  document.getElementById('lbw').innerHTML=`<video src="${r.src}" controls autoplay playsinline></video>`;
+  document.getElementById('lb').classList.add('on');
+}
+
+function closeLb(){ document.getElementById('lb').classList.remove('on'); document.getElementById('lbw').innerHTML=''; }
+
+function addItems(gridId, items){
+  const g = document.getElementById(gridId);
+  if(!g) return;
+  items.forEach((item, i) => {
+    const d = document.createElement('div');
+    d.className = 'fi' + (item.v ? ' vert' : '');
+    if(item.mp4 || item.src){ d.appendChild(makeVid(item)); }
+    else {
+      const img = document.createElement('img'); img.className = 'ft';
+      if(item.vimeo) { img.src = `https://vumbnail.com/${item.id}.jpg`; } 
+      else {
+        const q = ['maxresdefault', 'hqdefault', 'mqdefault']; let qi = 0;
+        img.onerror = () => { if(qi < q.length) img.src = `https://i.ytimg.com/vi/${item.id}/${q[qi++]}.jpg`; };
+        img.src = `https://i.ytimg.com/vi/${item.id}/${q[qi++]}.jpg`;
+      }
+      d.appendChild(img);
     }
+    d.innerHTML += `<div class="fp-wrap"><div class="fp"></div></div><div class="fo"><div class="fti">${item.title}</div><div class="fm">${item.meta}</div></div>`;
+    d.onclick = () => (item.id) ? openVideo(item) : openMP4(item);
+    g.appendChild(d);
+    setTimeout(() => { d.classList.add('show'); }, i * 60);
+  });
+}
 
-    function closeLB() {
-        const lb = document.getElementById('lb');
-        const lbv = document.getElementById('lb-video');
-        lb.style.display = 'none';
-        lbv.pause();
-        lbv.src = "";
-    }
+window.onload = () => {
+  addItems('fg', films); addItems('sg-vert1', reelsTop); addItems('sg-land', reelsLand); addItems('sg-vert2', reelsBot);
+  setTimeout(() => { document.getElementById('loader').classList.add('hide'); }, 1500);
+};
 </script>
-
 </body>
 </html>
